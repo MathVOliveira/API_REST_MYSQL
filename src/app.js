@@ -62,6 +62,5 @@ app.delete('/selecoes/:id', (req, res) => {
   res.send(`Seleção com id ${req.params.id} excluída com sucesso!`)
 })
 
-
 // exportação da instancia
 export default app;
