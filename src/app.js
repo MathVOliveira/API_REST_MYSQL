@@ -1,65 +1,93 @@
-// importação e instanciação do express (module ES)
 import express from 'express';
+import connection from '../infra/conexao.js';
 const app = express();
 
-// indica para o express ler json em corpo de requisições (body)
 app.use(express.json());
 
-// mock -> "imitação" de unidades reais, usado para testes
-const selecoes = [
-  {id: 1, selecao: 'Brasil', grupo: 'G'},
-  {id: 2, selecao: 'Suíça', grupo: 'G'},
-  {id: 3, selecao: 'Camarões', grupo: 'G'},
-  {id: 4, selecao: 'Sérvia', grupo: 'G'}
-];
+// ROTAS
 
-function buscarSelecaoPorId(id) {
-  // retorna como lista apenas o que tiver id igual ao parâmetro passado
-  return selecoes.filter( selecao => selecao.id == id );
-}
-
-function buscarIndexSelecao(id) {
-  // retorna o índice que tiver mesmo id que o parâmetro passado
-  return selecoes.findIndex( selecao => selecao.id == id )
-}
-
-// criar rota padrão ou raiz
-app.get('/', (request, response) => {
-  response.send('Hello World!');
-})
-
-// GET -> pegar/buscar informações
+// GET
 app.get('/selecoes', (req, res) => {
-  res.status(200).send(selecoes);
+  // query sql
+  const sql = "SELECT * FROM selecoes;";
+  // query() -> sempre retorna um array com algo ou vazio
+  connection.query(sql, (error, result) => {
+    if (error) {
+      res.status(404).json({ 'erro': error })
+    } else {
+      res.status(200).json(result);
+    }
+  })
+
 })
 
 // GET por id
 app.get('/selecoes/:id', (req, res) => {
-  res.status(200).json(buscarSelecaoPorId(req.params.id));
+  
+  const sql = `SELECT * FROM selecoes WHERE id=${req.params.id};`;
+  
+  connection.query(sql, (error, result) => {
+    const row = result[0];
+    if (error) {
+      res.status(404).json({ 'erro': error })
+    } else {
+      res.status(200).json(row);
+    }
+  })
+
+  // É possível passar o id em query(), como abaixo:
+  // const id = req.params.id;
+  // const sql = `SELECT * FROM selecoes WHERE id=?;`;
+  // connection.query(sql, id (error, result) => {})
 })
 
 // POST -> criar dados
 app.post('/selecoes', (req, res) => {
-  selecoes.push(req.body);
+  
+    const selecao = req.body; 
+    const sql = `INSERT INTO selecoes SET ?;`;
+    
+    connection.query(sql, selecao, (error, result) => {
+      if (error) {
+        res.status(400).json({ 'erro': error })
+      } else {
+        res.status(201).json(result);
+      }
+    })
+  
+  // const sql = `INSERT INTO selecoes (selecao, grupo) VALUES ('${req.body.selecao}','${req.body.grupo}');`;
+  // connection.query(sql, (error, result) => {})
 
-  res.status(201).send('Selecao cadastrada com sucesso');
 })
 
 // PUT -> atualizar dados
 app.put('/selecoes/:id', (req, res) => {
-  let index = buscarIndexSelecao(req.params.id);
-  selecoes[index].selecao = req.body.selecao;
-  selecoes[index].grupo   = req.body.grupo;
+  
+  const sql = `UPDATE selecoes SET selecao='${req.body.selecao}',grupo='${req.body.grupo}' WHERE id=${req.params.id};`;
+  
+  connection.query(sql, (error, result) => {
+    if (error) {
+      res.status(404).json({ 'erro': error })
+    } else {
+      res.status(200).json(result);
+    }
+  })
 
-  res.json(selecoes);
 })
 
 // DELETE
 app.delete('/selecoes/:id', (req, res) => {
-  let index = buscarIndexSelecao(req.params.id);
-  selecoes.splice(index, 1);
+  
+  const sql = `DELETE FROM selecoes WHERE id=${req.params.id};`;
 
-  res.send(`Seleção com id ${req.params.id} excluída com sucesso!`)
+  connection.query(sql, (error, result) => {
+    if (error) {
+      res.status(404).json({ 'erro': error })
+    } else {
+      res.status(200).json(result);
+    }
+  })
+
 })
 
 // exportação da instancia

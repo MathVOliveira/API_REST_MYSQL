@@ -11,4 +11,7 @@ const connection = mysql.createConnection({
   database: process.env.MYSQL_DATABASE
 })
 
+// conectar ao mysql
+connection.connect();
+
 export default connection;
